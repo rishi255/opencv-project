@@ -172,7 +172,7 @@ def generate_image(filename):
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     # ? Remove the imshow afterwards, only for debugging
-    cv2.imshow("Faces found", image)
+    # cv2.imshow("Faces found", image)
 
     # encode the image in JPEG format
     (flag, encoded_image) = cv2.imencode(".jpg", image)
