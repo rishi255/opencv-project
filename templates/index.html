@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<header class="masthead" style="background-image:url({{url_for('static', filename='assets/img/intro-bg.jpg')}});">
+    <div class="intro-body">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h1 class="brand-heading" style="font-size: 4.5em;">face detection</h1>
+                    <p class="intro-text">With OpenCV for Python</p>
+                </div>
+            </div>
+        </div>
+
+        <p style="margin: 0px 0px 10px;">
+            <button onclick="window.location.href='/image'" class="btn btn-outline-primary" type="button">face detection from image</button>
+        </p>
+        <p style="margin: 0px 0px 10px;">
+            <button onclick="window.location.href='/live_feed'" class="btn btn-outline-primary" type="button">real time live face detection</button>
+        </p>
+        <p style="margin: 0px 0px 10px;">
+            <button onclick="window.location.href='/heart_rate'" class="btn btn-outline-primary" type="button">heart rate detection from fingertip video</button>
+        </p>
+    </div>
+</header>
+
+{% endblock %}

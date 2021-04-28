@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<main class="page contact-page">
+    <section class="portfolio-block contact">
+        <div class="container">
+            <div class="heading">
+                <h2>image</h2>
+            </div>
+            <form action="/process_image" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file1">Image file</label><input class="form-control-file item" type="file" id="image_file" name="image_file"></div>
+                <div class="form-group">
+                    <button class="btn btn-primary btn-block btn-lg gradient" type="submit">Submit Form</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
+
+{% endblock %}

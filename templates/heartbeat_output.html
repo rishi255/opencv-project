@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<header class="masthead" style="background-image:url({{url_for('static', filename='assets/img/intro-bg.jpg')}});">
+    <div class="intro-body">
+        <div class="container embed-responsive">
+            <div class="row">
+                <!-- <div class="col-lg-8 mx-auto"> <h1 class="brand-heading" style="font-size: 4.5VH;">face detection</h1> <p class="intro-text">With OpenCV for Python</p> </div> -->
+                <div class="media mx-auto">
+                    {# <img src="{{ url_for('raw_plot') }}" alt=""> #}
+                    <img src="{{ plot_path }}" alt="">
+                </div>
+                <div class="mx-auto">
+                    Heart Rate:
+                    {{heart_rate}}
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+{% endblock %}
