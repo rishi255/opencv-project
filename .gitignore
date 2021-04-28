@@ -3,3 +3,4 @@ __pycache__
 .vscode
 static/assets/img/uploads
 venv/
+old-requirements.txt
