@@ -4,4 +4,3 @@ __pycache__
 static/assets/img/uploads
 venv/
 old-requirements.txt
-Aptfile
