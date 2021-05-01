@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<main class="page contact-page">
-    <section class="portfolio-block contact">
+<header class="masthead" style="background-image:url({{url_for('static', filename='assets/img/intro-bg.jpg')}});">
+    <div class="intro-body">
         <div class="container">
             <div class="heading">
                 <h2>image</h2>
@@ -15,7 +15,7 @@
                 </div>
             </form>
         </div>
-    </section>
-</main>
+    </div>
+</header>
 
 {% endblock %}
