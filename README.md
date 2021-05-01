@@ -24,4 +24,5 @@ The installer will create a virtual environment for the repository and install a
 1. Activate the virtual environment created during setup:
    - `./venv/Scripts/activate` for Windows
    - `source venv1/bin/activate` for Linux
-1. Run the file `app.py` with your python interpreter.
+2. Run the command: `flask run` (or `python3 -m flask run` if the previous one does not work)
+3. Launch the URL given in the flask output (https://localhost:5000)
