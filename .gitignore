@@ -3,4 +3,7 @@ __pycache__
 .vscode
 static/assets/img/uploads
 venv/
+venv1/
 old-requirements.txt
+Procfile
+Aptfile
