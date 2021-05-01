@@ -15,7 +15,7 @@
 
 3. Run the installer:
    - For Windows: `./setup.bat`
-   - For Linux: `./setup.sh`
+   - For Linux: `source setup.sh`
 
 The installer will create a virtual environment for the repository and install all the required packages.
 
