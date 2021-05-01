@@ -1,12 +1,14 @@
+import datetime
 import os
-import time
 from io import BytesIO
 
 import cv2
+import imutils
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from flask import Flask, Response, redirect, render_template, request, url_for
+from imutils.video import FileVideoStream, WebcamVideoStream
 from PIL import Image
 from scipy.signal import find_peaks_cwt
 
@@ -18,6 +20,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Create the haar cascade
 faceCascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+profileCascade = cv2.CascadeClassifier("haarcascade_profileface.xml")
 
 
 def file_name(filename):
@@ -69,22 +72,6 @@ def process_image():
     return render_template("image_output.html", frame_path=generated_image_filename)
 
 
-# # ? Gets currently saved (last generated) image
-# # ? returned without wrapping in html template, just used internally
-# @app.route("/raw_image")
-# def raw_image():
-#     return Response(
-#         open(file_name("last_generated_image"), "rb").read(),
-#         mimetype="multipart/x-mixed-replace; boundary=frame",
-#     )
-
-
-# # ? Actual image result with templated html
-# @app.route("/image_result")
-# def image_result():
-#     return render_template("image_output.html")
-
-
 @app.route("/heart_rate")
 def heartbeat_input():
     return render_template("heartbeat_input.html")
@@ -97,27 +84,26 @@ def heartbeat_result():
     video_file.save(file_name("heart_rate"))
 
     # connecting with the captured video file taken from mobile
-    cap = cv2.VideoCapture(file_name("heart_rate"))
+    fvs = FileVideoStream(file_name("heart_rate")).start()
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
-
-    # getting the number of frames
-    no_of_frames = int(cap.get(7))
+    # getting the number of frames in the video
+    no_of_frames = int(fvs.stream.get(7))
 
     # will eventually contain average red pixel value per frame
     red_avg_values = np.zeros(no_of_frames)
 
-    # camera frame per second is 30 and so each frame acccurs after 1/30th second
-    for i in range(no_of_frames):
-        # reading the frame
-        ret, frame = cap.read()
+    fps = fvs.stream.get(cv2.CAP_PROP_FPS)
+
+    i = 0
+    while fvs.more() and i < no_of_frames:
+        frame = fvs.read()
         length, width, _ = frame.shape
 
         # calculating average red channel value in the frame
         red_avg_values[i] = np.sum(frame[:, :, 2]) / (length * width)
-
-    cap.release()
+        i += 1
+    fvs.stop()
+    print(f"[INFO] FPS of the video: {fps:.2f}")
 
     peaks = find_peaks_cwt(red_avg_values, widths=np.ones(red_avg_values.shape) * 2) - 1
 
@@ -140,89 +126,88 @@ def heartbeat_result():
     )
 
 
-# @app.route("/heartbeat_result")
-# def heartbeat_result():
-#     return render_template(
-#         "heartbeat_output.html", plot_path=file_name("last_generated_plot.png"), heart_rate = heart_rate
-#     )
-
-
-# @app.route("/raw_plot")
-# def raw_plot():
-#     return Response(
-#         open(file_name("last_generated_plot.png"), "rb").read(),
-#         mimetype="multipart/x-mixed-replace; boundary=frame",
-#     )
-
-
 # ? detects faces and draws bounding box over faces in the image.
 # ? Returns byte-encoded image
 def generate_image(filename):
-    # print("Path:", filename)
     image = cv2.imread(filename)
+    image = imutils.resize(image, width=450)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Detect faces in the image
+    # ? Detect faces in the image
     faces = faceCascade.detectMultiScale(
-        gray, scaleFactor=1.2, minNeighbors=5, minSize=(30, 30)
+        gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30)
+    )
+
+    profiles = profileCascade.detectMultiScale(
+        gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30)
     )
 
     # Draw a rectangle around the faces
     for (x, y, w, h) in faces:
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # ? Remove the imshow afterwards, only for debugging
-    # cv2.imshow("Faces found", image)
+    if len(faces) == 0:
+        # Draw a rectangle around the face side-profiles in blue colour
+        for (x, y, w, h) in profiles:
+            cv2.rectangle(image, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
     # encode the image in JPEG format
     (flag, encoded_image) = cv2.imencode(".jpg", image)
 
     # return output image in byte format
     return bytearray(encoded_image)
-    # return (
-    #     b"--frame\r\n"
-    #     b"Content-Type: image/jpeg\r\n\r\n" + bytearray(encoded_image) + b"\r\n"
-    # )
 
 
 # ? takes next frame from camera and detects face in it, and draws bounding box around it.
 # ? Returns byte-encoded image (frame)
 def generate_next_frame():
-    video_capture = cv2.VideoCapture(0)
+    fvs = WebcamVideoStream(0 + cv2.CAP_DSHOW).start()
 
     # used to record the time when we processed last frame
-    prev_frame_time = 0
+    prev_frame_time = datetime.datetime.now()
 
     # used to record the time at which we processed current frame
-    new_frame_time = 0
+    new_frame_time = None
 
     while True:
-        # Capture frame-by-frame
-        ret, frame = video_capture.read()
+        frame = fvs.read()
+        if frame is None:
+            break
+        frame = imutils.resize(frame, width=500)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Detect faces in the image
         faces = faceCascade.detectMultiScale(
-            gray, scaleFactor=1.2, minNeighbors=5, minSize=(30, 30)
+            gray, scaleFactor=1.2, minNeighbors=4, minSize=(30, 30)
         )
 
-        # Draw a rectangle around the faces
+        profiles = profileCascade.detectMultiScale(
+            gray, scaleFactor=1.2, minNeighbors=4, minSize=(30, 30)
+        )
+
+        # Draw a rectangle around the faces in green colour
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+        if len(faces) == 0:
+            # Draw a rectangle around the face side-profiles in blue colour
+            for (x, y, w, h) in profiles:
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
         # ? calculate and diplay real time FPS on screen
-        new_frame_time = time.time()
-        fps_realtime = 1 / (new_frame_time - prev_frame_time)
+        new_frame_time = datetime.datetime.now()
+        curr_fps = 1 / (new_frame_time - prev_frame_time).total_seconds()
         prev_frame_time = new_frame_time
-        fps_realtime = str(int(fps_realtime))  # format(fps_realtime, "%d")
+        curr_fps = int(curr_fps)
+
         cv2.putText(
             frame,
-            fps_realtime,
-            (7, 70),
+            f"Current FPS: {curr_fps}",
+            (7, 20),
             cv2.FONT_HERSHEY_SIMPLEX,
-            3,
-            (100, 255, 0),
-            3,
+            0.5,
+            (0, 0, 0),
+            1,
             cv2.LINE_AA,
         )
 
@@ -234,7 +219,8 @@ def generate_next_frame():
             b"--frame\r\n"
             b"Content-Type: image/jpeg\r\n\r\n" + bytearray(encoded_image) + b"\r\n"
         )
+    fvs.stop()
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
