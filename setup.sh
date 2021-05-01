@@ -5,5 +5,3 @@ python3 -m venv venv1 > /dev/null
 source venv1/bin/activate
 echo "Installing requirements for the virtual environment..."
 python3 -m pip install -r requirements.txt > /dev/null
-echo "Launching Flask server..."
-flask run
